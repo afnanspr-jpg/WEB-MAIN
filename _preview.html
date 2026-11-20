@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <title>Preview</title>
+  <style>
+    html, body { margin: 0; background: #fff; }
+    iframe { display: block; width: 1280px; height: 900px; border: 0; }
+  </style>
+</head>
+<body>
+  <iframe id="frame" src="/"></iframe>
+  <script>
+    const frame = document.getElementById('frame');
+    frame.addEventListener('load', () => {
+      const doc = frame.contentDocument;
+      const win = frame.contentWindow;
+      doc.documentElement.style.scrollBehavior = 'auto';
+      doc.querySelectorAll('.reveal').forEach((el) => el.classList.add('is-visible'));
+      doc.getElementById('infografis')?.classList.add('is-visible');
+      const style = doc.createElement('style');
+      style.textContent = '*,*::before,*::after{animation:none!important;transition:none!important}';
+      doc.head.appendChild(style);
+      doc.querySelectorAll('[data-count]').forEach((el) => {
+        el.textContent = new Intl.NumberFormat('id-ID').format(Number(el.dataset.count));
+      });
+      doc.querySelectorAll('.bar-fill').forEach((el) => { el.style.transform = 'scaleX(1)'; });
+      const target = new URLSearchParams(location.search).get('s');
+      if (target === 'footer') {
+        doc.querySelector('.site-footer')?.scrollIntoView();
+      } else if (target) {
+        const element = doc.getElementById(target) || doc.querySelector(target);
+        element?.scrollIntoView();
+      }
+    });
+  </script>
+</body>
+</html>
