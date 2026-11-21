@@ -16,8 +16,8 @@
       const doc = frame.contentDocument;
       const win = frame.contentWindow;
       doc.documentElement.style.scrollBehavior = 'auto';
-      doc.querySelectorAll('.reveal').forEach((el) => el.classList.add('is-visible'));
-      doc.getElementById('infografis')?.classList.add('is-visible');
+      doc.querySelectorAll('.reveal, .rv').forEach((el) => el.classList.add('is-visible', 'in'));
+      doc.getElementById('infografis')?.classList.add('is-visible', 'in');
       const style = doc.createElement('style');
       style.textContent = '*,*::before,*::after{animation:none!important;transition:none!important}';
       doc.head.appendChild(style);
