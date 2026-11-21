@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://padukuhanputon.netlify.app/sitemap.xml
+Sitemap: https://DOMAIN-ANDA.id/sitemap.xml
