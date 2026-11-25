@@ -86,30 +86,17 @@
   if (G) gsap.set(['h1', '.lead', '.actions', '.dots'], { visibility: 'visible' });
   if (M) {
     const words = split($('h1'));
-    gsap.timeline({ defaults: { ease: 'power4.out' } })
-      .from('.info span', { yPercent: -130, duration: 0.8, stagger: 0.1 })
-      .from('.logo', { x: -60, duration: 0.9 }, 0.1)
-      .from('#nav a', { x: 50, duration: 0.8, stagger: 0.06, clearProps: 'transform' }, 0.15)
-      .from('.slides', { xPercent: 100, duration: 1.5, ease: 'power4.inOut' }, 0.1)
-      .from(words, { yPercent: 118, rotate: 7, duration: 1.2, stagger: 0.12 }, 0.35)
-      .fromTo('.lead', { y: 40, clipPath: 'inset(0% 0% 100% 0%)' }, { y: 0, clipPath: 'inset(0% 0% 0% 0%)', duration: 1, clearProps: 'clipPath' }, 0.8)
-      .from('.actions .btn', { y: 36, scale: 0.7, duration: 0.9, stagger: 0.1, ease: 'back.out(1.7)', clearProps: 'transform' }, 1)
-      .from('.dots button', { scaleX: 0, duration: 0.6, stagger: 0.08 }, 1.2)
-      .from('.wave', { yPercent: 100, duration: 1.2, stagger: 0.12 }, 0.5);
+    gsap.timeline({ defaults: { ease: 'power3.out' } })
+      .from('.info span', { yPercent: -100, duration: 0.7, stagger: 0.08 })
+      .from('.logo', { y: -12, duration: 0.7 }, 0.05)
+      .from('#nav a', { y: -10, duration: 0.6, stagger: 0.05 }, 0.1)
+      .from(words, { yPercent: 70, duration: 1, stagger: 0.09 }, 0.25)
+      .from('.lead', { y: 24, duration: 0.8 }, 0.6)
+      .from('.actions .btn', { y: 16, duration: 0.7, stagger: 0.08 }, 0.7)
+      .from('.dots button', { scaleX: 0, duration: 0.5, stagger: 0.06 }, 0.9);
     const px = { trigger: hero, start: 'top top', end: 'bottom top', scrub: true };
     if (innerWidth > 940) gsap.to('.slides', { y: 50, ease: 'none', scrollTrigger: { ...px } });
     gsap.to('.hero-in', { y: -50, ease: 'none', scrollTrigger: { ...px } });
-    gsap.to('.wave:not(.b)', { x: -1440, duration: 16, ease: 'none', repeat: -1 });
-    gsap.fromTo('.wave.b', { x: -1440 }, { x: 0, duration: 27, ease: 'none', repeat: -1 });
-    const fl = document.createElement('div');
-    fl.className = 'fl'; fl.setAttribute('aria-hidden', 'true');
-    for (let i = 0; i < 8; i++) {
-      const d = document.createElement('i'), s = gsap.utils.random(9, 20, 1);
-      d.style.cssText = `left:${gsap.utils.random(1, 46)}%;top:${gsap.utils.random(8, 82)}%;width:${s}px;height:${s}px`;
-      fl.append(d);
-      gsap.to(d, { x: gsap.utils.random(-40, 40), y: gsap.utils.random(-60, 60), rotate: i % 2 ? 180 : -180, duration: gsap.utils.random(4, 7), ease: 'sine.inOut', repeat: -1, yoyo: true });
-    }
-    hero.append(fl);
   }
 
   /* Gulir: progres, header, tombol ke atas, menu aktif */
@@ -138,10 +125,6 @@
     if (document.fonts) document.fonts.ready.then(() => ScrollTrigger.refresh());
   }
 
-  /* Pita kata berjalan */
-  const mq = $('.marq'), words = ['Padukuhan Puton', 'Watu Ngelak', 'Kali Opak', 'Trimulyo', 'Jetis', 'Bantul'];
-  if (mq) mq.innerHTML = [0, 1].map(() => '<div>' + words.concat(words).map((t) => `<span>${t}</span>`).join('') + '</div>').join('');
-
   /* Foto wisata dibungkus agar bisa berparalaks */
   $$('.photo img').forEach((img) => { const m = document.createElement('div'); m.className = 'mask'; img.replaceWith(m); m.append(img); });
 
@@ -155,20 +138,8 @@
   };
   const wipe = 'inset(0% 0% 100% 0%)';
   if (M) {
-    $$('h2').forEach((h) => gsap.from(split(h), { yPercent: 118, rotate: 6, duration: 1.1, stagger: 0.09, ease: 'power4.out', scrollTrigger: { trigger: h, start: 'top 88%', once: true } }));
-    $$('.head').forEach((h) => gsap.fromTo(h, { '--b': 0 }, { '--b': 1, duration: 1, ease: 'power4.out', scrollTrigger: { trigger: h, start: 'top 88%', once: true } }));
-    batch('.head p', { y: 30, clipPath: wipe });
-    batch('.quick .tile', { y: 70, rotate: (i) => (i % 2 ? 4 : -4) });
-    batch('.stats .wrap > div', { y: 50, scale: 0.85 });
-    batch('.salam > :first-child', { y: 60, clipPath: 'inset(100% 0% 0% 0%)' });
-    batch('.salam > div > :not(h2):not(blockquote)', { y: 30, clipPath: wipe });
-    batch('.sec > .wrap > .cols > *, .sec > .cols > *', { x: (i) => (i % 2 ? 80 : -80) });
-    batch('.trio .card', { y: 90, rotate: (i) => (i % 2 ? 3 : -3) });
-    batch('.g', { clipPath: 'inset(100% 0% 0% 0%)', scale: 0.9 });
-    batch('.ag', { x: -90, scale: 0.96 });
-    batch('.qa details', { y: 40, clipPath: wipe });
-    batch('.fgrid > *', { y: 50 });
-    batch('.fbottom > *', { y: 30 });
+    $$('h2').forEach((h) => gsap.from(split(h), { yPercent: 55, duration: 0.9, stagger: 0.06, ease: 'power3.out', scrollTrigger: { trigger: h, start: 'top 90%', once: true } }));
+    batch('.head p, .quick .tile, .stats .wrap > div, .salam > :first-child, .salam > div > :not(h2):not(blockquote), .sec > .wrap > .cols > *, .sec > .cols > *, .trio .card, .g, .ag, .qa details, .fgrid > *, .fbottom > *', { y: 24 });
 
     gsap.from('.bar-fill', { scaleX: 0, duration: 1.5, ease: 'power4.out', stagger: 0.1, scrollTrigger: { trigger: '.age', start: 'top 85%', once: true } });
     gsap.from('.split span', { scaleX: 0, transformOrigin: '0 50%', duration: 1.5, ease: 'power4.out', stagger: 0.15, scrollTrigger: { trigger: '.split', start: 'top 88%', once: true } });
@@ -179,25 +150,6 @@
     });
     $$('.arch img, .mask img').forEach((img) => gsap.fromTo(img, { yPercent: -9, scale: 1.2 }, { yPercent: 9, ease: 'none', scrollTrigger: { trigger: img.parentNode, start: 'top bottom', end: 'bottom top', scrub: true } }));
 
-    const bq = $('.salam blockquote');
-    if (bq) {
-      const t = bq.textContent.trim();
-      bq.setAttribute('aria-label', t);
-      bq.innerHTML = t.split(/\s+/).map((w) => `<span aria-hidden="true">${w}</span>`).join(' ');
-      gsap.fromTo([...bq.children], { color: '#a9bbad' }, { color: '#1f4a37', stagger: 0.1, ease: 'none', scrollTrigger: { trigger: bq, start: 'top 85%', end: 'bottom 45%', scrub: true } });
-    }
-    if (mq) {
-      const run = gsap.to($$('.marq > div'), { xPercent: -100, duration: 38, ease: 'none', repeat: -1 });
-      ScrollTrigger.create({ start: 0, end: 'max', onUpdate: (s) => {
-        run.timeScale(s.direction * (1 + Math.min(Math.abs(s.getVelocity()) / 220, 8)));
-        gsap.to(run, { timeScale: 1, duration: 1.4, overwrite: true });
-      } });
-    }
-    if (fine) $$('.btn').forEach((b) => {
-      const qx = gsap.quickTo(b, 'x', { duration: 0.5, ease: 'power3' }), qy = gsap.quickTo(b, 'y', { duration: 0.5, ease: 'power3' });
-      b.addEventListener('pointermove', (e) => { const r = b.getBoundingClientRect(); qx((e.clientX - r.left - r.width / 2) * 0.25); qy((e.clientY - r.top - r.height / 2) * 0.35); });
-      b.addEventListener('pointerleave', () => { qx(0); qy(0); });
-    });
   }
 
   /* Tab dengan penanda geser */
