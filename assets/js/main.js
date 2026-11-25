@@ -57,7 +57,7 @@
   };
 
   /* Hero: pergantian foto dengan tirai clip-path */
-  const hero = $('.hero'), slides = $$('.slides img'), dots = $('.dots'), credit = $('.credit');
+  const slides = $$('.slides img'), dots = $('.dots'), credit = $('.credit');
   let cur = 0, timer;
   const mark = () => { $$('button', dots).forEach((d, k) => d.classList.toggle('on', k === cur)); credit.textContent = slides[cur].dataset.c; };
   const show = (i) => {
@@ -69,9 +69,8 @@
     gsap.killTweensOf(slides);
     gsap.set(slides, { zIndex: 0 });
     gsap.set(p, { zIndex: 1 });
-    gsap.set(n, { zIndex: 2, visibility: 'visible', clipPath: 'inset(0% 0% 0% 100%)', scale: 1.25 });
-    gsap.to(n, { clipPath: 'inset(0% 0% 0% 0%)', duration: 1.2, ease: 'power4.inOut', onComplete: () => slides.forEach((s) => { if (s !== n) s.style.visibility = 'hidden'; }) });
-    gsap.to(n, { scale: 1, duration: 2.4, ease: 'power3.out' });
+    gsap.set(n, { zIndex: 2, visibility: 'visible', clipPath: 'inset(0% 0% 0% 100%)' });
+    gsap.to(n, { clipPath: 'inset(0% 0% 0% 0%)', duration: 1.1, ease: 'power4.inOut', onComplete: () => slides.forEach((s) => { if (s !== n) s.style.visibility = 'hidden'; }) });
   };
   const play = () => { clearInterval(timer); if (!calm) timer = setInterval(() => show(cur + 1), 6500); };
   slides.forEach((_, i) => {
@@ -82,21 +81,14 @@
   });
   mark(); play();
 
-  /* Pembuka hero */
+  /* Pembuka hero: satu gerak pendek, bukan koreografi panjang */
   if (G) gsap.set(['h1', '.lead', '.actions', '.dots'], { visibility: 'visible' });
   if (M) {
     const words = split($('h1'));
     gsap.timeline({ defaults: { ease: 'power3.out' } })
-      .from('.info span', { yPercent: -100, duration: 0.7, stagger: 0.08 })
-      .from('.logo', { y: -12, duration: 0.7 }, 0.05)
-      .from('#nav a', { y: -10, duration: 0.6, stagger: 0.05 }, 0.1)
-      .from(words, { yPercent: 70, duration: 1, stagger: 0.09 }, 0.25)
-      .from('.lead', { y: 24, duration: 0.8 }, 0.6)
-      .from('.actions .btn', { y: 16, duration: 0.7, stagger: 0.08 }, 0.7)
-      .from('.dots button', { scaleX: 0, duration: 0.5, stagger: 0.06 }, 0.9);
-    const px = { trigger: hero, start: 'top top', end: 'bottom top', scrub: true };
-    if (innerWidth > 940) gsap.to('.slides', { y: 50, ease: 'none', scrollTrigger: { ...px } });
-    gsap.to('.hero-in', { y: -50, ease: 'none', scrollTrigger: { ...px } });
+      .from(words, { yPercent: 55, duration: 0.9, stagger: 0.07 })
+      .from('.lead', { y: 18, duration: 0.7 }, 0.25)
+      .from('.actions .btn', { y: 12, duration: 0.6, stagger: 0.06 }, 0.35);
   }
 
   /* Gulir: progres, header, tombol ke atas, menu aktif */
@@ -117,6 +109,7 @@
         else fab.classList.toggle('on', f);
       }
     } });
+    $$('.head').forEach((h) => ScrollTrigger.create({ trigger: h, start: 'top 90%', once: true, onEnter: () => h.classList.add('in') }));
     $$('.top nav a[href^="#"]').forEach((a, _, links) => {
       const s = $(a.hash);
       if (s) ScrollTrigger.create({ trigger: s, start: 'top 50%', end: 'bottom 50%', onToggle: (t) => t.isActive && links.forEach((x) => x.classList.toggle('on', x === a)) });
@@ -125,31 +118,20 @@
     if (document.fonts) document.fonts.ready.then(() => ScrollTrigger.refresh());
   }
 
-  /* Foto wisata dibungkus agar bisa berparalaks */
+  /* Foto wisata diberi bingkai tetap, tanpa paralaks */
   $$('.photo img').forEach((img) => { const m = document.createElement('div'); m.className = 'mask'; img.replaceWith(m); m.append(img); });
 
-  /* Muncul saat digulir tanpa fade: geser, putar, dan tirai clip-path */
+  /* Muncul saat digulir: satu gerak naik yang sama, tanpa efek dekoratif */
   const batch = (sel, from) => {
     if (!M || !$(sel)) return;
     const to = {};
-    Object.keys(from).forEach((k) => { to[k] = k === 'clipPath' ? 'inset(0% 0% 0% 0%)' : k === 'scale' ? 1 : 0; });
+    Object.keys(from).forEach((k) => { to[k] = 0; });
     gsap.set(sel, from);
-    ScrollTrigger.batch(sel, { start: 'top 90%', once: true, onEnter: (b) => gsap.to(b, { ...to, duration: 1.1, ease: 'power4.out', stagger: 0.12, clearProps: 'transform,clipPath' }) });
+    ScrollTrigger.batch(sel, { start: 'top 90%', once: true, onEnter: (b) => gsap.to(b, { ...to, duration: 0.9, ease: 'power3.out', stagger: 0.1, clearProps: 'transform' }) });
   };
   const wipe = 'inset(0% 0% 100% 0%)';
   if (M) {
-    $$('h2').forEach((h) => gsap.from(split(h), { yPercent: 55, duration: 0.9, stagger: 0.06, ease: 'power3.out', scrollTrigger: { trigger: h, start: 'top 90%', once: true } }));
-    batch('.head p, .quick .tile, .stats .wrap > div, .salam > :first-child, .salam > div > :not(h2):not(blockquote), .sec > .wrap > .cols > *, .sec > .cols > *, .trio .card, .g, .ag, .qa details, .fgrid > *, .fbottom > *', { y: 24 });
-
-    gsap.from('.bar-fill', { scaleX: 0, duration: 1.5, ease: 'power4.out', stagger: 0.1, scrollTrigger: { trigger: '.age', start: 'top 85%', once: true } });
-    gsap.from('.split span', { scaleX: 0, transformOrigin: '0 50%', duration: 1.5, ease: 'power4.out', stagger: 0.15, scrollTrigger: { trigger: '.split', start: 'top 88%', once: true } });
-    $$('[data-count]').forEach((el) => {
-      const end = +el.dataset.count, o = { v: 0 };
-      el.textContent = '0';
-      ScrollTrigger.create({ trigger: el, start: 'top 92%', once: true, onEnter: () => gsap.to(o, { v: end, duration: 2, ease: 'power3.out', onUpdate: () => { el.textContent = Math.round(o.v).toLocaleString('id-ID'); } }) });
-    });
-    $$('.arch img, .mask img').forEach((img) => gsap.fromTo(img, { yPercent: -9, scale: 1.2 }, { yPercent: 9, ease: 'none', scrollTrigger: { trigger: img.parentNode, start: 'top bottom', end: 'bottom top', scrub: true } }));
-
+    batch('h2, .head p, .quick .tile, .stats .wrap > div, .salam > :first-child, .salam > div > :not(h2):not(blockquote), .sec > .wrap > .cols > *, .sec > .cols > *, .trio .card, .g, .ag, .qa details, .fgrid > *, .fbottom > *', { y: 20 });
   }
 
   /* Tab dengan penanda geser */
