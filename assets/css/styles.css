@@ -115,6 +115,7 @@ blockquote{margin:0 0 24px;font-size:clamp(1.5rem,3vw,2.1rem);line-height:1.2;co
 .sign i{display:grid;place-items:center;width:48px;height:48px;border:var(--bd);border-radius:50%;background:var(--gold);color:var(--ink);font:700 1.2rem Fraunces,serif}
 
 /* tab, daftar, peta, foto */
+[data-tabs]{min-width:0} /* izinkan tablist membungkus, jangan paksa kolom grid melebar */
 [role=tablist]{position:relative;display:flex;flex-wrap:wrap;gap:6px;width:max-content;max-width:100%;margin-bottom:30px;padding:5px;border:var(--bd);border-radius:16px;background:#fff;box-shadow:4px 4px 0 var(--ink)}
 [role=tab]{position:relative;z-index:1;padding:10px 20px;border:0;border-radius:11px;background:none;color:var(--mut);font-weight:700;cursor:pointer;transition:color .3s}
 [role=tab][aria-selected=true]{color:var(--ink)}
