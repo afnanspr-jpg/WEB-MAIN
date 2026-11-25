@@ -88,7 +88,7 @@ p+p{margin-top:1em}
 .slides img:first-child{visibility:visible}
 .hero-in{position:relative;z-index:2;padding:clamp(104px,13vw,168px) 0 clamp(120px,14vw,180px)}
 .hero-in>*{max-width:min(32rem,38%)}
-h1{font-size:clamp(3rem,6.2vw,5.4rem);line-height:.98;color:var(--on-dark)}
+h1{font-size:clamp(3.05rem,6.4vw,5.6rem);line-height:.98;color:var(--on-dark)}
 .lead{margin-top:26px;font-size:1.1rem;color:var(--on-dark-mut)}
 .actions{display:flex;flex-wrap:wrap;gap:14px;margin-top:36px}
 .dots{display:flex;gap:8px;margin-top:40px}
@@ -112,6 +112,13 @@ h1{font-size:clamp(3rem,6.2vw,5.4rem);line-height:.98;color:var(--on-dark)}
 .stats .wrap>div:last-child{border-right:0}
 .stats b{display:block;font-size:clamp(2.3rem,4.6vw,3.4rem);color:var(--gold-lt)}
 .stats span{color:var(--on-dark-mut);font-size:.9rem;font-weight:500}
+
+/* nilai Puton Maton */
+.motto{background:var(--paper)}
+.mat{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1px;background:var(--line);border:1px solid var(--line)}
+.mv{display:grid;align-content:start;gap:18px;padding:28px 22px;background:var(--paper)}
+.mat i{display:block;width:16px;height:16px;background:var(--gold)}
+.mat h3{margin:0;font-size:1.2rem}
 
 /* sambutan */
 .salam{display:grid;grid-template-columns:5fr 6fr;gap:clamp(40px,6vw,88px);align-items:center}
@@ -216,6 +223,8 @@ details p{margin:0;padding:0 44px 20px 0;color:var(--mut)}
 .form select option{color:var(--on-dark);background:var(--deep)}
 .form .btn{justify-self:start}
 .site-footer{padding:clamp(56px,7vw,88px) 0 28px;background:var(--deep);color:var(--on-dark-mut);font-size:.92rem}
+.batik{height:30px;overflow:hidden;border-top:1px solid var(--dark-line);background:var(--deep);color:var(--gold)}
+.batik svg{display:block}
 .fgrid{display:grid;grid-template-columns:2fr 1fr 1fr;gap:40px}
 .fgrid b{color:var(--on-dark);font-size:1.1rem;font-weight:700}
 .fgrid p{max-width:26rem;margin-top:10px}
