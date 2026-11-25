@@ -1,49 +1,77 @@
-/* Padukuhan Puton: interaksi ringan, tanpa dependensi. */
+/* Padukuhan Puton: GSAP + ScrollTrigger + Lenis. Gerak memakai transform dan clip-path saja: tanpa gradien, tanpa transparansi. */
 (() => {
   'use strict';
   const WA = ''; // GANTI: nomor WhatsApp dukuh, format 62812xxxxxxx (kosong = pilih kontak sendiri)
   const $ = (s, r = document) => r.querySelector(s);
   const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+  const G = !!(window.gsap && window.ScrollTrigger);
   const calm = matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const now = new Date(), hr = now.getHours();
+  const M = G && !calm; // gerak penuh: GSAP termuat dan pengguna tidak meminta gerak dikurangi
+  const fine = matchMedia('(hover: hover) and (pointer: fine)').matches;
+  const out4 = (t) => 1 - Math.pow(1 - t, 4);
+  if (G) gsap.registerPlugin(ScrollTrigger); else document.documentElement.classList.remove('js');
+
+  /* Lenis: gulir halus, disambung ke ticker GSAP */
+  const L = M && window.Lenis ? new Lenis({ lerp: 0.09 }) : null;
+  if (L) {
+    L.on('scroll', ScrollTrigger.update);
+    gsap.ticker.add((t) => L.raf(t * 1000));
+    gsap.ticker.lagSmoothing(0);
+  }
 
   /* Sapaan, tanggal, tahun */
+  const now = new Date(), hr = now.getHours();
   $('#hi').textContent = hr < 11 ? 'Sugeng enjang' : hr < 15 ? 'Sugeng siang' : hr < 18 ? 'Sugeng sonten' : 'Sugeng dalu';
   $('#dt').textContent = new Intl.DateTimeFormat('id-ID', { dateStyle: 'full' }).format(now);
   $('#year').textContent = now.getFullYear();
 
   /* Menu seluler */
-  const nav = $('#nav'), mb = $('.menu');
-  const setMenu = (o) => { nav.classList.toggle('open', o); mb.setAttribute('aria-expanded', o); mb.setAttribute('aria-label', o ? 'Tutup menu' : 'Buka menu'); };
+  const nav = $('#nav'), mb = $('.menu'), hd = $('.top'), fab = $('.fab');
+  const setMenu = (o) => {
+    nav.classList.toggle('open', o);
+    mb.setAttribute('aria-expanded', o);
+    mb.setAttribute('aria-label', o ? 'Tutup menu' : 'Buka menu');
+    if (M && o) gsap.from('#nav a', { x: -40, duration: 0.5, stagger: 0.05, ease: 'power3.out', clearProps: 'transform' });
+  };
   mb.onclick = () => setMenu(!nav.classList.contains('open'));
   nav.onclick = (e) => e.target.closest('a') && setMenu(false);
   addEventListener('keydown', (e) => { if (e.key === 'Escape' && nav.classList.contains('open')) { setMenu(false); mb.focus(); } });
 
-  /* Gulir: progres, header, paralaks, tombol ke atas */
-  const prog = $('.prog'), de = document.documentElement, hd = $('.top'), bg = $('.slides'), fab = $('.fab'), ring = $('.fab circle + circle');
-  let ly = 0, tick = false;
-  const onScroll = () => {
-    tick = false;
-    const y = scrollY, p = y / Math.max(de.scrollHeight - innerHeight, 1);
-    prog.style.width = p * 100 + '%';
-    hd.classList.toggle('sh', y > 10);
-    hd.classList.toggle('hide', y > ly && y > 160 && !nav.classList.contains('open'));
-    ly = y;
-    if (!calm && y < innerHeight) bg.style.setProperty('--sy', Math.min(y * 0.25, 60) + 'px');
-    fab.classList.toggle('on', y > 600);
-    ring.style.strokeDashoffset = 100 - p * 100;
-  };
-  addEventListener('scroll', () => { if (!tick) { tick = true; requestAnimationFrame(onScroll); } }, { passive: true });
-  fab.onclick = () => scrollTo({ top: 0, behavior: calm ? 'auto' : 'smooth' });
+  /* Tautan jangkar: gulir halus lewat Lenis */
+  $$('a[href^="#"]:not(.skip)').forEach((a) => a.addEventListener('click', (e) => {
+    const t = a.hash.length > 1 && $(a.hash);
+    if (!t) return;
+    e.preventDefault();
+    history.pushState(null, '', a.hash);
+    if (L) L.scrollTo(t, { offset: -56, duration: 1.4, easing: out4 });
+    else t.scrollIntoView({ behavior: calm ? 'auto' : 'smooth' });
+  }));
+  fab.onclick = () => (L ? L.scrollTo(0, { duration: 1.6, easing: out4 }) : scrollTo({ top: 0, behavior: calm ? 'auto' : 'smooth' }));
 
-  /* Hero: pergantian foto */
-  const slides = $$('.slides img'), dots = $('.dots'), credit = $('.credit');
+  /* Pecah kata untuk judul bertirai */
+  const split = (el) => {
+    const t = el.textContent.trim();
+    el.setAttribute('aria-label', t);
+    el.innerHTML = t.split(/\s+/).map((w) => `<span class="w" aria-hidden="true"><span>${w}</span></span>`).join(' ');
+    return $$('.w > span', el);
+  };
+
+  /* Hero: pergantian foto dengan tirai clip-path */
+  const hero = $('.hero'), slides = $$('.slides img'), dots = $('.dots'), credit = $('.credit');
   let cur = 0, timer;
+  const mark = () => { $$('button', dots).forEach((d, k) => d.classList.toggle('on', k === cur)); credit.textContent = slides[cur].dataset.c; };
   const show = (i) => {
-    cur = (i + slides.length) % slides.length;
-    slides.forEach((s, k) => s.classList.toggle('on', k === cur));
-    $$('button', dots).forEach((d, k) => d.classList.toggle('on', k === cur));
-    credit.textContent = slides[cur].dataset.c;
+    i = (i + slides.length) % slides.length;
+    if (i === cur) return;
+    const n = slides[i], p = slides[cur];
+    cur = i; mark();
+    if (!M) { slides.forEach((s, k) => { s.style.visibility = k === i ? 'visible' : 'hidden'; }); return; }
+    gsap.killTweensOf(slides);
+    gsap.set(slides, { zIndex: 0 });
+    gsap.set(p, { zIndex: 1 });
+    gsap.set(n, { zIndex: 2, visibility: 'visible', clipPath: 'inset(0% 0% 0% 100%)', scale: 1.25 });
+    gsap.to(n, { clipPath: 'inset(0% 0% 0% 0%)', duration: 1.2, ease: 'power4.inOut', onComplete: () => slides.forEach((s) => { if (s !== n) s.style.visibility = 'hidden'; }) });
+    gsap.to(n, { scale: 1, duration: 2.4, ease: 'power3.out' });
   };
   const play = () => { clearInterval(timer); if (!calm) timer = setInterval(() => show(cur + 1), 6500); };
   slides.forEach((_, i) => {
@@ -52,96 +80,204 @@
     b.onclick = () => { show(i); play(); };
     dots.append(b);
   });
-  show(0); play();
+  mark(); play();
 
-  /* Muncul saat digulir: bagian, batang grafik, angka */
-  const count = (el) => {
-    const end = +el.dataset.count, fmt = (n) => n.toLocaleString('id-ID');
-    if (calm) { el.textContent = fmt(end); return; }
-    const t0 = performance.now();
-    const step = (t) => {
-      const p = Math.min((t - t0) / 1400, 1);
-      el.textContent = fmt(Math.round(end * (1 - Math.pow(1 - p, 3))));
-      if (p < 1) requestAnimationFrame(step);
-    };
-    requestAnimationFrame(step);
+  /* Pembuka hero */
+  if (G) gsap.set(['h1', '.lead', '.actions', '.dots'], { visibility: 'visible' });
+  if (M) {
+    const words = split($('h1'));
+    gsap.timeline({ defaults: { ease: 'power4.out' } })
+      .from('.info span', { yPercent: -130, duration: 0.8, stagger: 0.1 })
+      .from('.logo', { x: -60, duration: 0.9 }, 0.1)
+      .from('#nav a', { x: 50, duration: 0.8, stagger: 0.06, clearProps: 'transform' }, 0.15)
+      .from('.slides', { xPercent: 100, duration: 1.5, ease: 'power4.inOut' }, 0.1)
+      .from(words, { yPercent: 118, rotate: 7, duration: 1.2, stagger: 0.12 }, 0.35)
+      .fromTo('.lead', { y: 40, clipPath: 'inset(0% 0% 100% 0%)' }, { y: 0, clipPath: 'inset(0% 0% 0% 0%)', duration: 1, clearProps: 'clipPath' }, 0.8)
+      .from('.actions .btn', { y: 36, scale: 0.7, duration: 0.9, stagger: 0.1, ease: 'back.out(1.7)', clearProps: 'transform' }, 1)
+      .from('.dots button', { scaleX: 0, duration: 0.6, stagger: 0.08 }, 1.2)
+      .from('.wave', { yPercent: 100, duration: 1.2, stagger: 0.12 }, 0.5);
+    const px = { trigger: hero, start: 'top top', end: 'bottom top', scrub: true };
+    if (innerWidth > 940) gsap.to('.slides', { y: 50, ease: 'none', scrollTrigger: { ...px } });
+    gsap.to('.hero-in', { y: -50, ease: 'none', scrollTrigger: { ...px } });
+    gsap.to('.wave:not(.b)', { x: -1440, duration: 16, ease: 'none', repeat: -1 });
+    gsap.fromTo('.wave.b', { x: -1440 }, { x: 0, duration: 27, ease: 'none', repeat: -1 });
+    const fl = document.createElement('div');
+    fl.className = 'fl'; fl.setAttribute('aria-hidden', 'true');
+    for (let i = 0; i < 8; i++) {
+      const d = document.createElement('i'), s = gsap.utils.random(9, 20, 1);
+      d.style.cssText = `left:${gsap.utils.random(1, 46)}%;top:${gsap.utils.random(8, 82)}%;width:${s}px;height:${s}px`;
+      fl.append(d);
+      gsap.to(d, { x: gsap.utils.random(-40, 40), y: gsap.utils.random(-60, 60), rotate: i % 2 ? 180 : -180, duration: gsap.utils.random(4, 7), ease: 'sine.inOut', repeat: -1, yoyo: true });
+    }
+    hero.append(fl);
+  }
+
+  /* Gulir: progres, header, tombol ke atas, menu aktif */
+  if (G) {
+    const all = { start: 0, end: 'max' };
+    gsap.to('.prog', { scaleX: 1, ease: 'none', scrollTrigger: { ...all, scrub: calm ? true : 0.3 } });
+    gsap.to('.fab circle + circle', { strokeDashoffset: 0, ease: 'none', scrollTrigger: { ...all, scrub: true } });
+    let hid = false, up = false;
+    fab.inert = true;
+    if (M) gsap.set(fab, { scale: 0, rotate: -90 });
+    ScrollTrigger.create({ ...all, onUpdate: (s) => {
+      const y = s.scroll(), h = y > 160 && s.direction === 1 && !nav.classList.contains('open'), f = y > 600;
+      hd.classList.toggle('sh', y > 10);
+      if (M && h !== hid) { hid = h; gsap.to(hd, { yPercent: h ? -100 : 0, duration: 0.5, ease: 'power3.out', overwrite: true }); }
+      if (f !== up) {
+        up = f; fab.inert = !f;
+        if (M) gsap.to(fab, { scale: f ? 1 : 0, rotate: f ? 0 : -90, duration: 0.5, ease: f ? 'back.out(2)' : 'power2.in', overwrite: true });
+        else fab.classList.toggle('on', f);
+      }
+    } });
+    $$('.top nav a[href^="#"]').forEach((a, _, links) => {
+      const s = $(a.hash);
+      if (s) ScrollTrigger.create({ trigger: s, start: 'top 50%', end: 'bottom 50%', onToggle: (t) => t.isActive && links.forEach((x) => x.classList.toggle('on', x === a)) });
+    });
+    addEventListener('load', () => ScrollTrigger.refresh());
+    if (document.fonts) document.fonts.ready.then(() => ScrollTrigger.refresh());
+  }
+
+  /* Pita kata berjalan */
+  const mq = $('.marq'), words = ['Padukuhan Puton', 'Watu Ngelak', 'Kali Opak', 'Trimulyo', 'Jetis', 'Bantul'];
+  if (mq) mq.innerHTML = [0, 1].map(() => '<div>' + words.concat(words).map((t) => `<span>${t}</span>`).join('') + '</div>').join('');
+
+  /* Foto wisata dibungkus agar bisa berparalaks */
+  $$('.photo img').forEach((img) => { const m = document.createElement('div'); m.className = 'mask'; img.replaceWith(m); m.append(img); });
+
+  /* Muncul saat digulir tanpa fade: geser, putar, dan tirai clip-path */
+  const batch = (sel, from) => {
+    if (!M || !$(sel)) return;
+    const to = {};
+    Object.keys(from).forEach((k) => { to[k] = k === 'clipPath' ? 'inset(0% 0% 0% 0%)' : k === 'scale' ? 1 : 0; });
+    gsap.set(sel, from);
+    ScrollTrigger.batch(sel, { start: 'top 90%', once: true, onEnter: (b) => gsap.to(b, { ...to, duration: 1.1, ease: 'power4.out', stagger: 0.12, clearProps: 'transform,clipPath' }) });
   };
-  const io = new IntersectionObserver((es) => es.forEach((e) => {
-    if (!e.isIntersecting) return;
-    e.target.classList.add('in');
-    if (e.target.dataset.count) count(e.target);
-    io.unobserve(e.target);
-  }), { rootMargin: '0px 0px -8% 0px' });
-  const kids = ['.trio', '.gal', '.quick', '.stats .wrap', '.fgrid', '.cols', '.salam'];
-  $$(kids.join()).forEach((p) => [...p.children].forEach((c, i) => c.style.setProperty('--d', Math.min(i, 5) * 0.1 + 's')));
-  $$('.rv, .bar-fill, [data-count], ' + kids.map((k) => k + ' > *').join()).forEach((el) => io.observe(el));
+  const wipe = 'inset(0% 0% 100% 0%)';
+  if (M) {
+    $$('h2').forEach((h) => gsap.from(split(h), { yPercent: 118, rotate: 6, duration: 1.1, stagger: 0.09, ease: 'power4.out', scrollTrigger: { trigger: h, start: 'top 88%', once: true } }));
+    $$('.head').forEach((h) => gsap.fromTo(h, { '--b': 0 }, { '--b': 1, duration: 1, ease: 'power4.out', scrollTrigger: { trigger: h, start: 'top 88%', once: true } }));
+    batch('.head p', { y: 30, clipPath: wipe });
+    batch('.quick .tile', { y: 70, rotate: (i) => (i % 2 ? 4 : -4) });
+    batch('.stats .wrap > div', { y: 50, scale: 0.85 });
+    batch('.salam > :first-child', { y: 60, clipPath: 'inset(100% 0% 0% 0%)' });
+    batch('.salam > div > :not(h2):not(blockquote)', { y: 30, clipPath: wipe });
+    batch('.sec > .wrap > .cols > *, .sec > .cols > *', { x: (i) => (i % 2 ? 80 : -80) });
+    batch('.trio .card', { y: 90, rotate: (i) => (i % 2 ? 3 : -3) });
+    batch('.g', { clipPath: 'inset(100% 0% 0% 0%)', scale: 0.9 });
+    batch('.ag', { x: -90, scale: 0.96 });
+    batch('.qa details', { y: 40, clipPath: wipe });
+    batch('.fgrid > *', { y: 50 });
+    batch('.fbottom > *', { y: 30 });
 
-  /* Menu aktif sesuai bagian */
-  const links = $$('.top nav a[href^="#"]');
-  const spy = new IntersectionObserver((es) => es.forEach((e) => {
-    if (e.isIntersecting) links.forEach((a) => a.classList.toggle('on', a.hash === '#' + e.target.id));
-  }), { rootMargin: '-45% 0px -50% 0px' });
-  links.forEach((a) => { const s = $(a.hash); if (s) spy.observe(s); });
+    gsap.from('.bar-fill', { scaleX: 0, duration: 1.5, ease: 'power4.out', stagger: 0.1, scrollTrigger: { trigger: '.age', start: 'top 85%', once: true } });
+    gsap.from('.split span', { scaleX: 0, transformOrigin: '0 50%', duration: 1.5, ease: 'power4.out', stagger: 0.15, scrollTrigger: { trigger: '.split', start: 'top 88%', once: true } });
+    $$('[data-count]').forEach((el) => {
+      const end = +el.dataset.count, o = { v: 0 };
+      el.textContent = '0';
+      ScrollTrigger.create({ trigger: el, start: 'top 92%', once: true, onEnter: () => gsap.to(o, { v: end, duration: 2, ease: 'power3.out', onUpdate: () => { el.textContent = Math.round(o.v).toLocaleString('id-ID'); } }) });
+    });
+    $$('.arch img, .mask img').forEach((img) => gsap.fromTo(img, { yPercent: -9, scale: 1.2 }, { yPercent: 9, ease: 'none', scrollTrigger: { trigger: img.parentNode, start: 'top bottom', end: 'bottom top', scrub: true } }));
+
+    const bq = $('.salam blockquote');
+    if (bq) {
+      const t = bq.textContent.trim();
+      bq.setAttribute('aria-label', t);
+      bq.innerHTML = t.split(/\s+/).map((w) => `<span aria-hidden="true">${w}</span>`).join(' ');
+      gsap.fromTo([...bq.children], { color: '#a9bbad' }, { color: '#1f4a37', stagger: 0.1, ease: 'none', scrollTrigger: { trigger: bq, start: 'top 85%', end: 'bottom 45%', scrub: true } });
+    }
+    if (mq) {
+      const run = gsap.to($$('.marq > div'), { xPercent: -100, duration: 38, ease: 'none', repeat: -1 });
+      ScrollTrigger.create({ start: 0, end: 'max', onUpdate: (s) => {
+        run.timeScale(s.direction * (1 + Math.min(Math.abs(s.getVelocity()) / 220, 8)));
+        gsap.to(run, { timeScale: 1, duration: 1.4, overwrite: true });
+      } });
+    }
+    if (fine) $$('.btn').forEach((b) => {
+      const qx = gsap.quickTo(b, 'x', { duration: 0.5, ease: 'power3' }), qy = gsap.quickTo(b, 'y', { duration: 0.5, ease: 'power3' });
+      b.addEventListener('pointermove', (e) => { const r = b.getBoundingClientRect(); qx((e.clientX - r.left - r.width / 2) * 0.25); qy((e.clientY - r.top - r.height / 2) * 0.35); });
+      b.addEventListener('pointerleave', () => { qx(0); qy(0); });
+    });
+  }
 
   /* Tab dengan penanda geser */
   $$('[data-tabs]').forEach((box) => {
     const list = $('[role=tablist]', box), tabs = $$('[role=tab]', box), pill = document.createElement('i');
-    pill.className = 'pill'; pill.setAttribute('aria-hidden', 'true'); pill.style.transition = 'none'; list.prepend(pill);
+    pill.className = 'pill'; pill.setAttribute('aria-hidden', 'true'); list.prepend(pill);
     let cur = tabs[0];
-    const move = (t) => { cur = t; Object.assign(pill.style, { width: t.offsetWidth + 'px', height: t.offsetHeight + 'px', transform: `translate(${t.offsetLeft}px,${t.offsetTop}px)` }); };
-    const pick = (t) => {
-      move(t);
+    const move = (t, anim) => {
+      const v = { x: t.offsetLeft, y: t.offsetTop, width: t.offsetWidth, height: t.offsetHeight };
+      if (M) gsap[anim ? 'to' : 'set'](pill, { ...v, duration: 0.55, ease: 'power4.out', overwrite: true });
+      else Object.assign(pill.style, { width: v.width + 'px', height: v.height + 'px', transform: `translate(${v.x}px,${v.y}px)` });
+    };
+    const pick = (t, anim) => {
+      cur = t; move(t, anim);
       tabs.forEach((x) => {
-        const on = x === t;
-        x.setAttribute('aria-selected', on); x.tabIndex = on ? 0 : -1;
-        $('#' + x.getAttribute('aria-controls')).hidden = !on;
+        const on = x === t, p = $('#' + x.getAttribute('aria-controls'));
+        x.setAttribute('aria-selected', on); x.tabIndex = on ? 0 : -1; p.hidden = !on;
+        if (on && anim && M) gsap.fromTo(p, { y: 28, clipPath: wipe }, { y: 0, clipPath: 'inset(0% 0% 0% 0%)', duration: 0.8, ease: 'power4.out', clearProps: 'transform,clipPath' });
       });
+      if (anim && G) ScrollTrigger.refresh();
     };
     tabs.forEach((t, i) => {
-      t.onclick = () => pick(t);
+      t.onclick = () => pick(t, true);
       t.onkeydown = (e) => {
         const d = { ArrowRight: 1, ArrowLeft: -1 }[e.key];
-        if (d) { const n = tabs[(i + d + tabs.length) % tabs.length]; pick(n); n.focus(); }
+        if (d) { const n = tabs[(i + d + tabs.length) % tabs.length]; pick(n, true); n.focus(); }
       };
     });
-    pick(tabs[0]);
-    requestAnimationFrame(() => requestAnimationFrame(() => { pill.style.transition = ''; }));
-    addEventListener('resize', () => move(cur));
-    if (document.fonts) document.fonts.ready.then(() => move(cur));
+    pick(tabs[0], false);
+    addEventListener('resize', () => move(cur, false));
+    if (document.fonts) document.fonts.ready.then(() => move(cur, false));
   });
 
   /* Grafik umur: jumlah atau persen */
-  $$('[data-mode]').forEach((b) => b.onclick = () => {
+  $$('[data-mode]').forEach((b) => { b.onclick = () => {
     $$('[data-mode]').forEach((x) => { x.classList.toggle('on', x === b); x.setAttribute('aria-pressed', x === b); });
     $$('.age').forEach((r) => { $('b', r).textContent = r.dataset[b.dataset.mode]; });
-  });
+    if (M) gsap.from('.age b', { y: -14, rotate: -6, duration: 0.5, stagger: 0.06, ease: 'back.out(2)', clearProps: 'transform' });
+  }; });
 
   /* Agenda: status otomatis dan filter */
   const today = new Date().setHours(0, 0, 0, 0);
   $$('.ag').forEach((a) => {
-    const d = Math.round((new Date($('time', a).dateTime) - today) / 864e5), up = d >= 0;
-    a.dataset.s = up ? 'soon' : 'done';
-    $('.bd', a).textContent = !up ? 'Selesai' : d === 0 ? 'Hari ini' : d + ' hari lagi';
+    const d = Math.round((new Date($('time', a).dateTime) - today) / 864e5), upc = d >= 0;
+    a.dataset.s = upc ? 'soon' : 'done';
+    $('.bd', a).textContent = !upc ? 'Selesai' : d === 0 ? 'Hari ini' : d + ' hari lagi';
   });
-  $$('[data-f]').forEach((b) => b.onclick = () => {
+  $$('[data-f]').forEach((b) => { b.onclick = () => {
     $$('[data-f]').forEach((x) => { x.classList.toggle('on', x === b); x.setAttribute('aria-pressed', x === b); });
     $$('.ag').forEach((a) => { a.hidden = b.dataset.f !== 'all' && a.dataset.s !== b.dataset.f; });
+    if (M) gsap.from($$('.ag:not([hidden])'), { y: 40, scale: 0.96, duration: 0.7, stagger: 0.1, ease: 'power4.out', clearProps: 'transform' });
+    if (G) ScrollTrigger.refresh();
+  }; });
+
+  /* FAQ: buka dan tutup dengan tinggi beranimasi */
+  if (M) $$('details').forEach((d) => {
+    const p = $('p', d), done = () => { gsap.set(p, { clearProps: 'height,paddingTop,paddingBottom' }); ScrollTrigger.refresh(); };
+    $('summary', d).addEventListener('click', (e) => {
+      e.preventDefault();
+      if (d.open) gsap.to(p, { height: 0, paddingTop: 0, paddingBottom: 0, duration: 0.45, ease: 'power3.inOut', onComplete: () => { d.open = false; done(); } });
+      else { d.open = true; gsap.from(p, { height: 0, paddingTop: 0, paddingBottom: 0, duration: 0.6, ease: 'power3.out', onComplete: done }); }
+    });
   });
 
   /* Galeri: panah, papan ketik, dan geser */
   const lb = $('#lb'), gs = $$('.g img'), big = $('img', lb);
   let gi = 0, sx = 0;
-  const view = (n) => {
+  const view = (n, d = 0) => {
     gi = (n + gs.length) % gs.length;
     big.src = gs[gi].src; big.alt = gs[gi].alt;
     $('p', lb).textContent = (gi + 1) + ' / ' + gs.length + '. ' + gs[gi].dataset.c;
+    if (M) gsap.from(big, { x: d * 100, rotate: d ? d * 2 : -3, scale: d ? 0.92 : 0.8, duration: 0.7, ease: 'power4.out', clearProps: 'transform' });
   };
-  gs.forEach((img, n) => { img.parentNode.onclick = () => { view(n); if (lb.showModal) lb.showModal(); else open(img.src, '_blank', 'noopener'); }; });
-  $('.prev', lb).onclick = () => view(gi - 1);
-  $('.next', lb).onclick = () => view(gi + 1);
-  lb.addEventListener('keydown', (e) => { if (e.key === 'ArrowLeft') view(gi - 1); if (e.key === 'ArrowRight') view(gi + 1); });
+  gs.forEach((img, n) => { img.parentNode.onclick = () => { if (lb.showModal) { lb.showModal(); if (L) L.stop(); view(n); } else open(img.src, '_blank', 'noopener'); }; });
+  lb.addEventListener('close', () => { if (L) L.start(); });
+  $('.prev', lb).onclick = () => view(gi - 1, -1);
+  $('.next', lb).onclick = () => view(gi + 1, 1);
+  lb.addEventListener('keydown', (e) => { if (e.key === 'ArrowLeft') view(gi - 1, -1); if (e.key === 'ArrowRight') view(gi + 1, 1); });
   lb.addEventListener('pointerdown', (e) => { sx = e.clientX; });
-  lb.addEventListener('pointerup', (e) => { const d = e.clientX - sx; if (Math.abs(d) > 50) view(gi + (d < 0 ? 1 : -1)); });
+  lb.addEventListener('pointerup', (e) => { const d = e.clientX - sx; if (Math.abs(d) > 50) view(gi + (d < 0 ? 1 : -1), d < 0 ? 1 : -1); });
   lb.onclick = (e) => { if (e.target === lb) lb.close(); };
 
   /* Formulir: kirim lewat WhatsApp */
@@ -151,39 +287,4 @@
     const msg = `Halo Pak Dukuh, saya ${f.get('n')}. Keperluan: ${f.get('k')}.\n${f.get('m')}`;
     open(`https://wa.me/${WA}?text=${encodeURIComponent(msg)}`, '_blank', 'noopener');
   };
-
-  /* Judul hero per kata dan kunang-kunang */
-  const h1 = $('h1');
-  h1.innerHTML = h1.textContent.trim().split(/\s+/).map((w, i) => `<span class="w"><span style="--i:${i}">${w}</span></span>`).join(' ');
-  if (!calm) {
-    const fl = document.createElement('div');
-    fl.className = 'fl'; fl.setAttribute('aria-hidden', 'true');
-    for (let i = 0, n = innerWidth < 760 ? 8 : 16; i < n; i++) {
-      const f = document.createElement('i');
-      f.style.cssText = `--x:${Math.random() * 100}%;--s:${3 + Math.random() * 5}px;--t:${9 + Math.random() * 9}s;--d:-${Math.random() * 14}s;--dx:${Math.random() * 120 - 60}px`;
-      fl.append(f);
-    }
-    $('.hero').append(fl);
-  }
-
-  /* Pita kata berjalan */
-  const mq = $('.marq'), words = ['Padukuhan Puton', 'Watu Ngelak', 'Kali Opak', 'Trimulyo', 'Jetis', 'Bantul'];
-  if (mq) mq.innerHTML = [0, 1].map(() => '<div>' + words.concat(words).map((t) => `<span>${t}</span>`).join('') + '</div>').join('');
-
-  /* Efek kursor: sorot, miring, magnet, paralaks (perangkat dengan mouse) */
-  if (!calm && matchMedia('(hover: hover) and (pointer: fine)').matches) {
-    $$('.tile, .trio .card').forEach((c) => {
-      c.addEventListener('pointermove', (e) => {
-        const r = c.getBoundingClientRect(), x = e.clientX - r.left, y = e.clientY - r.top;
-        c.style.setProperty('--mx', x + 'px'); c.style.setProperty('--my', y + 'px');
-        c.style.setProperty('--rx', (0.5 - y / r.height) * 8 + 'deg'); c.style.setProperty('--ry', (x / r.width - 0.5) * 8 + 'deg');
-      });
-      c.addEventListener('pointerleave', () => { ['--rx', '--ry'].forEach((k) => c.style.setProperty(k, '0deg')); c.style.setProperty('--my', '-200px'); });
-    });
-    $$('.btn').forEach((b) => {
-      b.addEventListener('pointermove', (e) => { const r = b.getBoundingClientRect(); b.style.translate = `${(e.clientX - r.left - r.width / 2) * 0.2}px ${(e.clientY - r.top - r.height / 2) * 0.3}px`; });
-      b.addEventListener('pointerleave', () => { b.style.translate = ''; });
-    });
-    $('.hero').addEventListener('pointermove', (e) => bg.style.setProperty('--px', (e.clientX / innerWidth - 0.5) * -24 + 'px'));
-  }
 })();
